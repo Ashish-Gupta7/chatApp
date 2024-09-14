@@ -1,0 +1,138 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css" rel="stylesheet" />
+  <link rel="stylesheet" href="/stylesheets/chatroom.css">
+</head>
+
+<body>
+  <div class="w-full h-screen flex flex-col bg-slate-300 text-black" id="main">
+    <div class="flex items-center justify-between px-4 py-2 bg-emerald-700 text-white">
+      <h1 class="text-2xl"><i class="ri-chat-smile-2-line"></i> ChatRoom</h1>
+      <a href="/joinroom"
+        class="px-4 py-2 bg-emerald-900 hover:bg-red-900 hover:transition-all hover:duration-300">Leave
+        Room</a>
+    </div>
+    <div class="flex-1 bg-white flex overflow-y-auto">
+      <div class="bg-emerald-500 px-4 py-2 w-[250px]">
+        <div>
+          <h1 class="text-white">Room Name:</h1>
+          <h2 class="bg-emerald-200 w-max px-4 py-1 text-xl mt-1 mb-4">
+            <%= room %>
+          </h2>
+        </div>
+        <div class="users">
+          <h1 class="text-white mb-1"><i class="ri-group-line"></i> Users:</h1>
+          <div class="userList flex flex-col gap-1 max-h-[540px] overflow-y-auto">
+
+          </div>
+        </div>
+      </div>
+      <div class="messageBox flex-1 overflow-y-auto p-4">
+        <div class="messageContainer p-5">
+
+        </div>
+      </div>
+    </div>
+    <form class="messageForm flex items-center gap-2 bg-emerald-700 px-4 py-2">
+      <input class="inputMsg w-full px-3 py-2 outline-none" type="text" name="inputMsg"
+        placeholder="Send Your Messages">
+      <input type="submit" value="Send" class="bg-emerald-900 text-zinc-200 px-4 py-2">
+    </form>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.js"
+    integrity="sha512-luMnTJZ7oEchNDZAtQhgjomP1eZefnl82ruTH/3Oj/Yu5qYtwL7+dVRccACS/Snp1lFXq188XFipHKYE75IaQQ=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+  <script>
+    const socket = io();
+
+    let roomName = "<%= room %>";
+    let username = "<%= username %>";
+    let messageBox = document.querySelector(".messageBox");
+    let messageContainer = document.querySelector(".messageContainer");
+
+    socket.emit("joinRoom", { room: roomName, user: username })
+
+    socket.on("updateUserList", (users) => {
+      let userList = document.querySelector(".userList");
+      userList.innerHTML = '';
+      users.forEach(elm => {
+        let h2 = document.createElement("h2");
+        h2.textContent = elm.name;
+        h2.classList.add("bg-emerald-300", "w-max", "px-2", "py-1", "text-sm", "uppercase");
+        userList.appendChild(h2);
+      })
+    })
+
+    document.querySelector(".messageForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      let inputMsg = document.querySelector(".inputMsg");
+      if (inputMsg.value.length > 0) {
+        let msg = inputMsg.value;
+        socket.emit("chatMsg", { roomName, msg });
+        attachMessage(msg);
+        inputMsg.value = "";
+      }
+    });
+
+    socket.on("chatMsg", (data) => {
+      receiveMessage(data.msg);
+    });
+
+    function attachMessage(message) {
+      const rightDiv = document.createElement("div");
+      rightDiv.classList.add("right", "my-2", "flex", "justify-end");
+
+      const msgDiv = document.createElement("div");
+      msgDiv.classList.add(
+        "msg",
+        "bg-emerald-900",
+        "text-white",
+        "px-3",
+        "py-1",
+        "rounded",
+        "rounded-tr-none"
+      );
+
+      msgDiv.textContent = message;
+
+      rightDiv.appendChild(msgDiv);
+
+      document.querySelector(".messageBox").appendChild(rightDiv);
+      document.querySelector(".messageBox").scrollTop =
+        document.querySelector(".messageBox").scrollHeight;
+    }
+
+    function receiveMessage(message) {
+      const leftDiv = document.createElement("div");
+      leftDiv.classList.add("left", "my-2", "flex", "justify-start");
+
+      const msgDiv = document.createElement("div");
+      msgDiv.classList.add(
+        "msg",
+        "bg-emerald-950",
+        "text-white",
+        "px-3",
+        "py-1",
+        "rounded",
+        "rounded-tl-none"
+      );
+
+      msgDiv.textContent = message;
+
+      leftDiv.appendChild(msgDiv);
+
+      document.querySelector(".messageBox").appendChild(leftDiv);
+      document.querySelector(".messageBox").scrollTop =
+        document.querySelector(".messageBox").scrollHeight;
+    }
+
+  </script>
+</body>
+
+</html>
